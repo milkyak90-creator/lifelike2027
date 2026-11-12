@@ -9755,8 +9755,9 @@ try { (() => {
   document.body.appendChild(b);
   const tp = () => { const x = EW[0], z = EW[1] + 2.6, y = HK.ground ? HK.ground(x, z, hW(x, z)) : hW(x, z);
     P.x = x; P.z = z; P.y = y; P.vx = P.vz = 0; vy = 0; grounded = true; sm.set(P.x, P.y, P.z); curZone = ''; showToast('⛰ 정상으로 이동', '개발자용 순간이동이에요. 정상 옆 하산 카트 승강장도 가까이 있어요.'); };
-  b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); try { tp(); } catch (err) { console.error(err); } });
-  HB.tick.push(() => { const on = HB.site === 'hallasan' ? 'block' : 'none'; if (b.style.display !== on) b.style.display = on; });
+  b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); if (!isAdm()) return; try { tp(); } catch (err) { console.error(err); } });
+  const isAdm = () => { try { return !!(window.YNET && YNET.auth && YNET.auth.admin); } catch (e) { return false; } };
+  HB.tick.push(() => { const on = (HB.site === 'hallasan' && isAdm()) ? 'block' : 'none'; if (b.style.display !== on) b.style.display = on; });
   HB.hlsDevTp = tp;
 })(); } catch (e) { console.error('[HB2 정상 순간이동]', e); }
 
@@ -10015,13 +10016,13 @@ try { (() => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'gb'; b.textContent = '📝 메모'; b.addEventListener('click', () => { setMemo(true); show(); }); rb.appendChild(b); }, 500);
 
   /* ---------- 지도 연결: '월드 입장' 대신 '가는 방법 메모' ---------- */
-  const wrapWorlds = () => { try { const W = RS && RS.data && RS.data.worlds; if (!W) return false; let n = 0;
+  const wrapWorlds = () => { try { if (window.__L27_DEV) return true; const W = RS && RS.data && RS.data.worlds; if (!W) return false; let n = 0;
       Object.keys(WORLD).forEach(id => { const w = W[id]; if (!w) return; n++; if (w.__route) return;
         RS.registerWorld(id, Object.assign({}, w, { __route: true, enter: () => { setD(WORLD[id]); setMemo(true); show(); } })); });
       return n === Object.keys(WORLD).length; } catch (e) { return false; } };
   let tries = 0; const wv = setInterval(() => { if (wrapWorlds() || ++tries > 40) clearInterval(wv); }, 500); wrapWorlds();
   const body = document.getElementById('rgInfoBody');
-  if (body) new MutationObserver(() => { const eb = document.getElementById('rgEnter'); if (eb && !eb.disabled && eb.textContent.indexOf('월드 입장') >= 0) eb.textContent = '📝 가는 방법 메모에 적기'; }).observe(body, { childList: true, subtree: true });
+  if (body && !window.__L27_DEV) new MutationObserver(() => { const eb = document.getElementById('rgEnter'); if (eb && !eb.disabled && eb.textContent.indexOf('월드 입장') >= 0) eb.textContent = '📝 가는 방법 메모에 적기'; }).observe(body, { childList: true, subtree: true });
 
   /* 도착하면 목적지 메모를 자동으로 정리 */
   setInterval(() => { const d = getD(); if (d && cur() === d && document.body.classList.contains('ingame')) { setD(''); } }, 2000);
