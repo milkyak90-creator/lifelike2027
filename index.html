@@ -10106,8 +10106,20 @@ try { (() => {
   /* 새 공지가 있으면 게임에 들어올 때 한 번 자동으로 (처음 안내 메모를 이미 본 사람에게만) */
   let guideSeen = false; try { guideSeen = localStorage.getItem('yeoju_guide_v1') === '1'; } catch (e) { }
   /* 로그인 뒤 서버 공지를 가져와 새 글이 있으면 🆕 표시 (처음 안내 메모를 이미 본 사람에게는 한 번 자동으로 띄움) */
+  /* 입장하면 가장 최근 서버 공지를 화면 가운데 팝업으로 띄움. '그만보기'를 누르면 그 공지는 다시 안 뜸(공지사항 창에서는 계속 볼 수 있음) */
+  const PK = 'yeoju_notice_pop', popSeen = () => { try { return localStorage.getItem(PK) || ''; } catch (e) { return ''; } };
+  const pop = document.createElement('div'); pop.id = 'ntPop';
+  const pst = document.createElement('style'); pst.textContent = '#ntPop{position:fixed;inset:0;z-index:99994;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.5);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}#ntPop.on{display:flex}#ntPop .c{width:100%;max-width:380px;max-height:80vh;display:flex;flex-direction:column;border-radius:18px;background:#101d2e;color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:hidden}#ntPop .h{padding:14px 16px 8px;font-size:12px;opacity:.7}#ntPop .t{padding:0 16px 8px;font-size:18px;font-weight:800;word-break:break-word}#ntPop .bd{padding:4px 16px 14px;overflow-y:auto;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word;-webkit-overflow-scrolling:touch}#ntPop button{margin:0 14px 14px;padding:12px;border-radius:12px;border:0;background:#ffc85a;color:#1a1a1a;font-size:15px;font-weight:800}';
+  document.head.appendChild(pst); document.body.appendChild(pop);
+  ['keydown', 'keyup', 'pointerdown', 'touchstart', 'wheel'].forEach(ev => pop.addEventListener(ev, e => e.stopPropagation(), { passive: true }));
+  const popLatest = () => { const n = server[0]; if (!n || String(n.id) === popSeen()) return;
+    const iv = setInterval(() => { if (!document.body.classList.contains('ingame')) return; clearInterval(iv);
+      setTimeout(() => { if (String(n.id) === popSeen()) return;
+        pop.innerHTML = '<div class="c"><div class="h">📢 공지 · ' + fmt(n.created_at) + '</div><div class="t">' + esc(n.title) + '</div><div class="bd">' + esc(n.body) + '</div><button type="button">그만보기</button></div>';
+        pop.querySelector('button').addEventListener('click', () => { try { localStorage.setItem(PK, String(n.id)); } catch (e) { } pop.classList.remove('on'); });
+        pop.classList.add('on'); }, 1200); }, 400); };
   let tries = 0; const li = setInterval(() => { const a = A(); if (++tries > 120) clearInterval(li); if (!a || !a.user) return; clearInterval(li);
-    load().then(() => { paint(); if (guideSeen && isNew()) { const iv = setInterval(() => { if (document.body.classList.contains('ingame')) { clearInterval(iv); setTimeout(show, 1500); } }, 400); } }); }, 1000);
+    load().then(() => { paint(); popLatest(); }); }, 1000);
   window.__yNotice = { show, hide };
 })(); } catch (e) { console.error('[공지사항]', e); }
 
